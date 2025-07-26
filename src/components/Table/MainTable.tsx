@@ -1,5 +1,5 @@
-import { FC, useEffect, useState } from "react";
-import { Button, Input, Space, Table, TableProps } from "antd";
+import { FC, useEffect, useMemo, useState } from "react";
+import { Button, Input, Space, Table } from "antd";
 import { ITableData } from "@/types/ITableData";
 import {
   addItem,
@@ -7,10 +7,10 @@ import {
   getItems,
   modifyItem,
 } from "@/utils/localStorageFunctions";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import ModalForm from "../ModalForm/ModalForm";
 import { IModalState } from "@/types/IModalState";
-import { Moment } from "moment";
+import { tableSearch } from "@/utils/tableSearch";
+import { getTableColumns } from "./TableColumns/tableColumns";
 
 const MainTable: FC = () => {
   const [data, setData] = useState<ITableData[]>([]);
@@ -18,6 +18,7 @@ const MainTable: FC = () => {
     visible: false,
     mode: "add",
   });
+  const [searchStr, setSearchStr] = useState<string>("");
 
   useEffect(() => {
     const storedItems = getItems();
@@ -28,7 +29,9 @@ const MainTable: FC = () => {
     setModalState({ visible: true, mode: "add" });
   };
 
-  const handleEdit = (record: ITableData) => {
+  const handleEdit = (
+    record: ITableData
+  ): React.MouseEventHandler<HTMLButtonElement> => {
     return () => {
       setModalState({
         visible: true,
@@ -60,7 +63,9 @@ const MainTable: FC = () => {
     setModalState((prev) => ({ ...prev, visible: false }));
   };
 
-  const handleDelete = (key: string) => {
+  const handleDelete = (
+    key: string
+  ): React.MouseEventHandler<HTMLButtonElement> => {
     return () => {
       const newItems = deleteItem(key);
       setData(newItems);
@@ -71,64 +76,39 @@ const MainTable: FC = () => {
     setModalState((prev) => ({ ...prev, visible: false }));
   };
 
-  const tableColumns: TableProps<ITableData>["columns"] = [
-    {
-      title: "Имя",
-      dataIndex: "name",
-      key: "name",
-      sorter: (a, b) => a.name.localeCompare(b.name, "ru"),
-    },
-    {
-      title: "Дата",
-      dataIndex: "date",
-      key: "date",
-      render: (date: Moment) => date.format("YYYY-MM-DD"),
-      sorter: (a, b) =>
-        new Date(a.date.toDate()).getTime() -
-        new Date(b.date.toDate()).getTime(),
-    },
-    {
-      title: "Возраст",
-      dataIndex: "age",
-      key: "age",
-      sorter: (a, b) => a.age - b.age,
-    },
-    {
-      title: "Действия",
-      key: "actions",
-      render: (_, record: ITableData) => (
-        <Space size="middle">
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={handleEdit(record)}
-          />
-          <Button
-            type="primary"
-            icon={<DeleteOutlined />}
-            onClick={handleDelete(record.key)}
-            danger
-          />
-        </Space>
-      ),
-    },
-  ];
+  const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchStr(e.target.value);
+  };
+
+  const filteredData = useMemo(
+    () => tableSearch(data, searchStr),
+    [data, searchStr]
+  );
+
+  const columns = useMemo(() => getTableColumns(handleEdit, handleDelete), []);
 
   return (
     <>
       <Space size="large" direction="vertical">
-        <Input.Search variant="outlined" size="large" />
+        <Input.Search
+          variant="outlined"
+          size="large"
+          value={searchStr}
+          onChange={onSearchChange}
+        />
         <Button type="primary" size="large" onClick={handleAdd}>
           Добавить
         </Button>
-        <Table<ITableData> dataSource={data} columns={tableColumns} />
+        <Table<ITableData> dataSource={filteredData} columns={columns} />
       </Space>
 
-      <ModalForm
-        {...modalState}
-        onCancel={onModalClose}
-        onSubmit={handleSubmit}
-      />
+      {modalState.visible && (
+        <ModalForm
+          {...modalState}
+          onCancel={onModalClose}
+          onSubmit={handleSubmit}
+        />
+      )}
     </>
   );
 };

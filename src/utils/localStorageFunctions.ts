@@ -1,4 +1,3 @@
-import { dataSource } from "@/consts/mockData";
 import { ITableData } from "@/types/ITableData";
 import moment from "moment";
 
@@ -33,8 +32,4 @@ export const deleteItem = (key: string): ITableData[] => {
   const newItems = storedItems.filter((item) => item.key !== key);
   localStorage.setItem(storageKey, JSON.stringify(newItems));
   return newItems;
-};
-
-export const setMockData = () => {
-  localStorage.setItem(storageKey, JSON.stringify(dataSource));
 };

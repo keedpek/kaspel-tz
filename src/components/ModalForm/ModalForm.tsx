@@ -60,11 +60,11 @@ const ModalForm: FC<IModalFormProps> = ({
             { required: true, message: "Введите дату" },
             {
               validator(_, value) {
-                if (value.isAfter(moment())) {
+                if (value && value.isAfter(moment())) {
                   return Promise.reject("Выберите прошедшую или текущую дату");
                 }
 
-                if (value.isBefore(moment().subtract(200, "years"))) {
+                if (value && value.isBefore(moment().subtract(200, "years"))) {
                   return Promise.reject("Дата слишком старая");
                 }
 
